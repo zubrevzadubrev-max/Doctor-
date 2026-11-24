@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Умная поликлиника — Личный кабинет пациента</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f3f9fa;
+      color: #0f172a;
+    }
+    .view-panel {
+      animation: fadeSlideIn 0.24s ease-out;
+    }
+    @keyframes fadeSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .toast-enter {
+      animation: toastSlide 0.25s ease-out;
+    }
+    @keyframes toastSlide {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    /* Custom scrollbar for horizontal pill lists */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-slate-200/80 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 gap-3">
+        <!-- Brand -->
+        <button type="button" onclick="navigateTo('home')" class="flex items-center gap-2.5 text-left group focus:outline-none">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-teal-500 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
+            <i data-lucide="heart-pulse" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="font-bold text-slate-900 text-base sm:text-lg leading-tight">Умная поликлиника</div>
+            <div class="text-[11px] text-teal-700 font-medium hidden sm:block">Забота о здоровье без очередей</div>
+          </div>
+        </button>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl" aria-label="Основная навигация">
+          <button type="button" data-nav="home" onclick="navigateTo('home')" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>Главная</span>
+          </button>
+          <button type="button" data-nav="booking" onclick="navigateTo('booking')" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+            <span>Запись к врачу</span>
+          </button>
+          <button type="button" data-nav="certificates" onclick="navigateTo('certificates')" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+            <i data-lucide="file-check-2" class="w-4 h-4"></i>
+            <span>Справки</span>
+          </button>
+          <button type="button" data-nav="medcard" onclick="navigateTo('medcard')" class="nav-btn px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4"></i>
+            <span>Медкарта</span>
+          </button>
+        </nav>
+
+        <!-- Right Controls: Profile & Reset -->
+        <div class="flex items-center gap-2">
+          <button type="button" id="header-profile-btn" onclick="openProfileModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-200/70 transition-colors text-sm font-medium" title="Редактировать профиль">
+            <span class="w-7 h-7 rounded-full bg-sky-600 text-white flex items-center justify-center text-xs font-bold" id="header-avatar-initials">?</span>
+            <span class="max-w-[120px] sm:max-w-[160px] truncate" id="header-user-name">Представиться</span>
+            <i data-lucide="pencil" class="w-3.5 h-3.5 text-sky-600"></i>
+          </button>
+
+          <button type="button" onclick="openResetModal()" class="p-2 sm:px-3 sm:py-1.5 rounded-xl text-slate-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 transition-colors text-xs sm:text-sm font-medium flex items-center gap-1.5" title="Сбросить демо-данные">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            <span class="hidden lg:inline">Сбросить демо-данные</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation -->
+      <div class="md:hidden flex items-center gap-1 pb-2.5 overflow-x-auto no-scrollbar">
+        <button type="button" data-nav="home" onclick="navigateTo('home')" class="nav-btn flex-1 min-w-max px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="home" class="w-3.5 h-3.5"></i>
+          <span>Главная</span>
+        </button>
+        <button type="button" data-nav="booking" onclick="navigateTo('booking')" class="nav-btn flex-1 min-w-max px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i>
+          <span>Запись</span>
+        </button>
+        <button type="button" data-nav="certificates" onclick="navigateTo('certificates')" class="nav-btn flex-1 min-w-max px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="file-check-2" class="w-3.5 h-3.5"></i>
+          <span>Справки</span>
+        </button>
+        <button type="button" data-nav="medcard" onclick="navigateTo('medcard')" class="nav-btn flex-1 min-w-max px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center justify-center gap-1.5">
+          <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+          <span>Медкарта</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+
+    <!-- VIEW 1: HOME -->
+    <section id="view-home" class="view-panel space-y-6">
+      <!-- Welcome Banner -->
+      <div class="bg-gradient-to-r from-sky-600 via-sky-500 to-teal-500 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div class="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div class="space-y-2 max-w-2xl">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-xs font-medium backdrop-blur-sm">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+              <span>Данные сохраняются локально в вашем браузере</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight" id="home-greeting-title">Добро пожаловать в Умную поликлинику!</h1>
+            <p class="text-sky-50 text-sm sm:text-base" id="home-greeting-subtitle">
+              Управляйте записями к врачам, заказывайте медицинские справки и отслеживайте показатели здоровья в одном месте.
+            </p>
+            <div id="home-name-cta" class="pt-2 hidden">
+              <button type="button" onclick="openProfileModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-sky-700 font-semibold text-sm shadow-sm hover:bg-sky-50 transition-colors">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Указать своё имя для талонов и справок</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <button type="button" onclick="navigateTo('booking')" class="px-5 py-3 rounded-xl bg-white text-sky-700 hover:bg-sky-50 font-semibold text-sm shadow-sm transition-all flex items-center gap-2">
+              <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+              <span>Записаться к врачу</span>
+            </button>
+            <button type="button" onclick="navigateTo('certificates')" class="px-5 py-3 rounded-xl bg-teal-700/40 hover:bg-teal-700/60 text-white border border-white/30 font-semibold text-sm transition-all flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span>Заказать справку</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Search -->
+      <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-sm">
+        <div class="relative">
+          <i data-lucide="search" class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+          <input
+            type="text"
+            id="home-quick-search"
+            oninput="renderHomeSearch(this.value)"
+            placeholder="Быстрый поиск: врач, симптом (например, кашель, давление) или справка (086/у, бассейн)..."
+            class="w-full pl-12 pr-10 py-3.5 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-sky-400 focus:ring-4 focus:ring-sky-100 outline-none text-sm sm:text-base transition-all"
+          />
+          <button type="button" id="home-search-clear" onclick="clearHomeSearch()" class="hidden absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="home-search-results" class="hidden mt-4 pt-4 border-t border-slate-100"></div>
+      </div>
+
+      <!-- Dashboard Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left 2 cols: Appointments -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                <i data-lucide="calendar-clock" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-slate-900">Мои записи к врачам</h2>
+                <p class="text-xs text-slate-500">Предстоящие и недавние визиты</p>
+              </div>
+            </div>
+            <button type="button" onclick="navigateTo('booking')" class="px-3.5 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-semibold text-xs sm:text-sm transition-colors flex items-center gap-1.5">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Новая запись</span>
+            </button>
+          </div>
+
+          <div id="home-appointments-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Right 1 col: Certificates & Lab Summary -->
+        <div class="space-y-6">
+          <!-- Certificates Status -->
+          <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                  <i data-lucide="file-check-2" class="w-5 h-5"></i>
+                </div>
+                <h2 class="text-lg font-bold text-slate-900">Статус справок</h2>
+              </div>
+              <button type="button" onclick="navigateTo('certificates')" class="text-xs font-semibold text-teal-700 hover:text-teal-800">Все справки →</button>
+            </div>
+            <div id="home-certificates-summary" class="space-y-2.5"></div>
+          </div>
+
+          <!-- Latest Lab Results -->
+          <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                </div>
+                <h2 class="text-lg font-bold text-slate-900">Анализы</h2>
+              </div>
+              <button type="button" onclick="navigateTo('medcard')" class="text-xs font-semibold text-sky-700 hover:text-sky-800">Медкарта →</button>
+            </div>
+            <div id="home-labs-summary" class="space-y-2.5"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: BOOKING (SMART DOCTOR SELECTION) -->
+    <section id="view-booking" class="view-panel hidden space-y-6">
+      <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900">Умный подбор врача</h1>
+            <p class="text-sm text-slate-500">Выберите специализацию или укажите беспокоящий симптом — мы подберём подходящего специалиста</p>
+          </div>
+          <button type="button" onclick="resetBookingFilters()" class="self-start sm:self-auto text-xs font-medium text-slate-500 hover:text-sky-700 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-sky-50 transition-colors">
+            <i data-lucide="filter-x" class="w-3.5 h-3.5"></i>
+            <span>Сбросить фильтры</span>
+          </button>
+        </div>
+
+        <!-- Symptom Matcher -->
+        <div class="space-y-2">
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-teal-600"></i>
+            <span>Подбор по жалобе или симптому</span>
+          </div>
+          <div id="symptom-chips" class="flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Specialty & Format Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100">
+          <div>
+            <label for="filter-specialty" class="block text-xs font-semibold text-slate-600 mb-1.5">Специализация</label>
+            <select id="filter-specialty" onchange="updateBookingFilter('specialty', this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-400 outline-none">
+              <option value="all">Все специализации</option>
+              <option value="Терапевт">Терапевт</option>
+              <option value="Кардиолог">Кардиолог</option>
+              <option value="Невролог">Невролог</option>
+              <option value="ЛОР">ЛОР (Отоларинголог)</option>
+              <option value="Офтальмолог">Офтальмолог</option>
+              <option value="Эндокринолог">Эндокринолог</option>
+            </select>
+          </div>
+          <div>
+            <label for="filter-format" class="block text-xs font-semibold text-slate-600 mb-1.5">Формат приёма</label>
+            <select id="filter-format" onchange="updateBookingFilter('format', this.value)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-400 outline-none">
+              <option value="all">Любой формат (очно и онлайн)</option>
+              <option value="Очно">Очно в поликлинике</option>
+              <option value="Онлайн">Онлайн-консультация</option>
+            </select>
+          </div>
+          <div>
+            <label for="filter-doctor-query" class="block text-xs font-semibold text-slate-600 mb-1.5">Поиск врача по ФИО</label>
+            <input type="text" id="filter-doctor-query" oninput="updateBookingFilter('query', this.value)" placeholder="Например: Смирнова..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-400 outline-none" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Doctors Grid -->
+      <div id="doctors-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+    </section>
+
+    <!-- VIEW 3: CERTIFICATES & DOCUMENTS -->
+    <section id="view-certificates" class="view-panel hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Справки и медицинские документы</h1>
+          <p class="text-sm text-slate-500">Оформляйте заявки онлайн, отслеживайте готовность и скачивайте готовые документы</p>
+        </div>
+      </div>
+
+      <!-- Catalog -->
+      <div>
+        <h2 class="text-base font-bold text-slate-800 mb-3">Каталог доступных справок</h2>
+        <div id="certificates-catalog" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <!-- Application Form -->
+        <div class="lg:col-span-2 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm h-fit">
+          <div class="flex items-center gap-2.5 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
+              <i data-lucide="file-plus-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Онлайн-заявка</h2>
+              <p class="text-xs text-slate-500">Имя подставляется автоматически</p>
+            </div>
+          </div>
+
+          <form id="cert-request-form" onsubmit="submitCertificateRequest(event)" class="space-y-4">
+            <div>
+              <label for="cert-patient-name" class="block text-xs font-semibold text-slate-600 mb-1">ФИО / Имя пациента *</label>
+              <input type="text" id="cert-patient-name" required placeholder="Введите ваше имя" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-teal-500 outline-none" />
+            </div>
+
+            <div>
+              <label for="cert-type" class="block text-xs font-semibold text-slate-600 mb-1">Тип справки *</label>
+              <select id="cert-type" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-teal-500 outline-none"></select>
+            </div>
+
+            <div>
+              <label for="cert-target" class="block text-xs font-semibold text-slate-600 mb-1">Куда требуется (организация / цель)</label>
+              <input type="text" id="cert-target" placeholder="Например: Бассейн «Волна» или Университет" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-teal-500 outline-none" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1.5">Формат получения</label>
+              <div class="grid grid-cols-2 gap-2">
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-teal-400 text-xs font-medium">
+                  <input type="radio" name="certFormat" value="Электронный документ" checked class="text-teal-600" />
+                  <span>Электронная</span>
+                </label>
+                <label class="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-teal-400 text-xs font-medium">
+                  <input type="radio" name="certFormat" value="Бумажный оригинал" class="text-teal-600" />
+                  <span>В регистратуре</span>
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm shadow-sm transition-colors flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>Отправить заявку на справку</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- My Certificate Requests -->
+        <div class="lg:col-span-3 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Мои заявки и готовые справки</h2>
+              <p class="text-xs text-slate-500">Нажмите «Переключить статус» для проверки этапов или откройте готовый документ</p>
+            </div>
+            <select id="cert-status-filter" onchange="updateCertFilter(this.value)" class="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium outline-none">
+              <option value="all">Все статусы</option>
+              <option value="Готова">Готовые</option>
+              <option value="В обработке">В обработке</option>
+              <option value="Заявка принята">Принятые</option>
+            </select>
+          </div>
+          <div id="certificates-list" class="space-y-3"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: MEDICAL RECORD & LAB RESULTS -->
+    <section id="view-medcard" class="view-panel hidden space-y-6">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900">Электронная медкарта и анализы</h1>
+        <p class="text-sm text-slate-500">История визитов, понятные расшифровки анализов, динамика показателей и ваши личные заметки</p>
+      </div>
+
+      <!-- Health Dynamics Chart -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Динамика показателей здоровья</h2>
+            <p class="text-xs text-slate-500" id="chart-reference-note">Норма: 110–129 мм рт. ст.</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5" id="chart-metric-buttons"></div>
+        </div>
+        <div class="relative h-64 sm:h-72 w-full">
+          <canvas id="health-dynamics-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Lab Results & Visit History -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Lab Results -->
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i data-lucide="microscope" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">Результаты анализов</h2>
+              <p class="text-xs text-slate-500">С пояснениями простым языком</p>
+            </div>
+          </div>
+          <div id="medcard-labs-list" class="space-y-3"></div>
+        </div>
+
+        <!-- Visit History -->
+        <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+              <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900">История приёмов и рекомендации</h2>
+              <p class="text-xs text-slate-500">Заключения специалистов</p>
+            </div>
+          </div>
+          <div id="medcard-history-list" class="space-y-3"></div>
+        </div>
+      </div>
+
+      <!-- Personal Patient Notes -->
+      <div class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            <i data-lucide="notebook-pen" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">Личные заметки пациента</h2>
+            <p class="text-xs text-slate-500">Записывайте самочувствие, давление или вопросы к следующему визиту</p>
+          </div>
+        </div>
+
+        <form onsubmit="addPatientNote(event)" class="flex flex-col sm:flex-row gap-3">
+          <select id="note-category" class="px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm outline-none focus:border-sky-400">
+            <option value="Самочувствие">Самочувствие</option>
+            <option value="Вопрос врачу">Вопрос врачу</option>
+            <option value="Лекарства">Лекарства</option>
+            <option value="Измерения">Измерения</option>
+          </select>
+          <input type="text" id="note-text" required placeholder="Например: Утром давление 120/78, чувствую себя бодро..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-400 outline-none" />
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span>Сохранить заметку</span>
+          </button>
+        </form>
+
+        <div id="medcard-notes-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200/80 mt-12 py-5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div>Умная поликлиника — демонстрационный портал пациента (все данные хранятся локально в браузере)</div>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="openProfileModal()" class="hover:text-sky-700 font-medium">Изменить профиль</button>
+        <span>•</span>
+        <button type="button" onclick="openResetModal()" class="hover:text-rose-600 font-medium">Сбросить демо-данные</button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODAL: Welcome / Profile Editor -->
+  <div id="profile-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5 relative">
+      <button type="button" onclick="closeModal('profile-modal')" class="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 to-teal-500 text-white flex items-center justify-center">
+          <i data-lucide="user-round" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-slate-900" id="profile-modal-title">Добро пожаловать!</h3>
+          <p class="text-xs text-slate-500">Без паролей и регистрации — только для ваших талонов и справок</p>
+        </div>
+      </div>
+
+      <form onsubmit="saveProfile(event)" class="space-y-4">
+        <div>
+          <label for="profile-name-input" class="block text-xs font-semibold text-slate-700 mb-1">Ваше имя (или ФИО) *</label>
+          <input type="text" id="profile-name-input" required placeholder="Например: Анна Соколова" class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-100 outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="profile-year-input" class="block text-xs font-semibold text-slate-700 mb-1">Год рождения</label>
+            <input type="number" id="profile-year-input" min="1920" max="2026" placeholder="1992" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none" />
+          </div>
+          <div>
+            <label for="profile-city-input" class="block text-xs font-semibold text-slate-700 mb-1">Город</label>
+            <input type="text" id="profile-city-input" placeholder="Ташкент" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none" />
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('profile-modal')" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">Позже</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm transition-colors">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Book / Reschedule Appointment -->
+  <div id="booking-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-5 relative max-h-[90vh] overflow-y-auto">
+      <button type="button" onclick="closeModal('booking-modal')" class="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div>
+        <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 mb-1" id="booking-modal-badge">Запись на приём</span>
+        <h3 class="text-xl font-bold text-slate-900" id="booking-modal-doctor-name">Врач</h3>
+        <p class="text-sm text-slate-500" id="booking-modal-doctor-spec">Специализация</p>
+      </div>
+
+      <form onsubmit="confirmBooking(event)" class="space-y-4">
+        <div>
+          <label for="booking-patient-name" class="block text-xs font-semibold text-slate-700 mb-1">Пациент (отобразится в талоне) *</label>
+          <input type="text" id="booking-patient-name" required placeholder="Введите ваше имя" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">Формат консультации</label>
+          <div class="grid grid-cols-2 gap-2.5" id="booking-format-options"></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="booking-date" class="block text-xs font-semibold text-slate-700 mb-1">Дата приёма *</label>
+            <input type="date" id="booking-date" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none" />
+          </div>
+          <div>
+            <label for="booking-time" class="block text-xs font-semibold text-slate-700 mb-1">Время *</label>
+            <select id="booking-time" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none"></select>
+          </div>
+        </div>
+
+        <div>
+          <label for="booking-comment" class="block text-xs font-semibold text-slate-700 mb-1">Причина визита или жалоба (необязательно)</label>
+          <input type="text" id="booking-comment" placeholder="Например: Плановый осмотр или консультация по анализам" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm focus:bg-white focus:border-sky-500 outline-none" />
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('booking-modal')" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Отмена</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold shadow-sm flex items-center gap-2">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span id="booking-submit-label">Подтвердить запись</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Appointment Ticket -->
+  <div id="ticket-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+      <div class="bg-gradient-to-r from-sky-600 to-teal-500 p-5 text-white flex items-center justify-between">
+        <div>
+          <div class="text-xs uppercase tracking-wider text-sky-100 font-semibold">Электронный талон</div>
+          <div class="text-xl font-bold" id="ticket-number">№ ТЛ-0000</div>
+        </div>
+        <button type="button" onclick="closeModal('ticket-modal')" class="p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4" id="ticket-body"></div>
+      <div class="px-6 pb-6 flex gap-2.5">
+        <button type="button" onclick="downloadTicketCard()" class="flex-1 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Скачать талон</span>
+        </button>
+        <button type="button" onclick="closeModal('ticket-modal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition-colors">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Certificate Preview & Download -->
+  <div id="cert-preview-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="file-badge" class="w-5 h-5 text-teal-600"></i>
+          <span>Просмотр документа</span>
+        </div>
+        <button type="button" onclick="closeModal('cert-preview-modal')" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6" id="cert-preview-body"></div>
+      <div class="px-6 pb-6 flex gap-2.5">
+        <button type="button" onclick="downloadCurrentCertificate()" class="flex-1 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Скачать документ</span>
+        </button>
+        <button type="button" onclick="closeModal('cert-preview-modal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Reset Confirmation -->
+  <div id="reset-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4">
+      <div class="w-11 h-11 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+        <i data-lucide="rotate-ccw" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">Сбросить демо-данные?</h3>
+        <p class="text-sm text-slate-500 mt-1">Все созданные записи, заявки на справки, заметки и имя профиля будут возвращены к исходному демо-состоянию.</p>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeModal('reset-modal')" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100">Отмена</button>
+        <button type="button" onclick="confirmResetDemoData()" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold">Да, сбросить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <script>
+    const STORAGE_KEY = 'smart_polyclinic_state_v1';
+
+    // Reference static catalog data
+    const DOCTORS = [
+      {
+        id: 'doc-1',
+        name: 'Смирнова Елена Викторовна',
+        specialty: 'Терапевт',
+        experience: 14,
+        rating: 4.9,
+        reviews: 128,
+        formats: ['Очно', 'Онлайн'],
+        room: 'Каб. 204',
+        slots: ['09:30', '11:00', '14:15', '16:30'],
+        nearestDate: '2026-11-25',
+        symptoms: ['Слабость / температура', 'Кашель / простуда', 'Высокое давление / сердце'],
+        color: 'bg-sky-100 text-sky-700'
+      },
+      {
+        id: 'doc-2',
+        name: 'Каримов Тимур Рашидович',
+        specialty: 'Кардиолог',
+        experience: 18,
+        rating: 4.9,
+        reviews: 94,
+        formats: ['Очно', 'Онлайн'],
+        room: 'Каб. 312',
+        slots: ['10:00', '12:30', '15:00'],
+        nearestDate: '2026-11-25',
+        symptoms: ['Высокое давление / сердце', 'Одышка / боли в груди'],
+        color: 'bg-rose-100 text-rose-700'
+      },
+      {
+        id: 'doc-3',
+        name: 'Волкова Мария Андреевна',
+        specialty: 'Невролог',
+        experience: 11,
+        rating: 4.8,
+        reviews: 76,
+        formats: ['Очно', 'Онлайн'],
+        room: 'Каб. 218',
+        slots: ['09:00', '13:00', '17:15'],
+        nearestDate: '2026-11-26',
+        symptoms: ['Головная боль / бессонница', 'Боль в спине / шее'],
+        color: 'bg-indigo-100 text-indigo-700'
+      },
+      {
+        id: 'doc-4',
+        name: 'Азимов Рустам Фархадович',
+        specialty: 'ЛОР',
+        experience: 9,
+        rating: 4.8,
+        reviews: 63,
+        formats: ['Очно'],
+        room: 'Каб. 115',
+        slots: ['10:30', '12:00', '15:45'],
+        nearestDate: '2026-11-25',
+        symptoms: ['Боль в горле / насморк', 'Кашель / простуда', 'Шум или боль в ушах'],
+        color: 'bg-teal-100 text-teal-700'
+      },
+      {
+        id: 'doc-5',
+        name: 'Назарова Дилноза Шавкатовна',
+        specialty: 'Офтальмолог',
+        experience: 12,
+        rating: 5.0,
+        reviews: 112,
+        formats: ['Очно'],
+        room: 'Каб. 109',
+        slots: ['09:15', '11:45', '16:00'],
+        nearestDate: '2026-11-26',
+        symptoms: ['Ухудшение зрения / резь в глазах'],
+        color: 'bg-emerald-100 text-emerald-700'
+      },
+      {
+        id: 'doc-6',
+        name: 'Беляев Сергей Олегович',
+        specialty: 'Эндокринолог',
+        experience: 15,
+        rating: 4.9,
+        reviews: 81,
+        formats: ['Очно', 'Онлайн'],
+        room: 'Каб. 305',
+        slots: ['10:45', '14:00', '16:45'],
+        nearestDate: '2026-11-27',
+        symptoms: ['Усталость / жажда', 'Слабость / температура'],
+        color: 'bg-amber-100 text-amber-700'
+      }
+    ];
+
+    const SYMPTOMS = [
+      'Слабость / температура',
+      'Высокое давление / сердце',
+      'Головная боль / бессонница',
+      'Боль в горле / насморк',
+      'Кашель / простуда',
+      'Ухудшение зрения / резь в глазах',
+      'Боль в спине / шее',
+      'Усталость / жажда'
+    ];
+
+    const CERTIFICATE_CATALOG = [
+      {
+        id: 'cert-086',
+        title: 'Форма 086/у',
+        subtitle: 'Для поступления в вуз, колледж или на работу',
+        term: '1–2 рабочих дня',
+        icon: 'graduation-cap',
+        color: 'bg-sky-50 text-sky-600'
+      },
+      {
+        id: 'cert-pool',
+        title: 'Справка в бассейн / спортсекцию',
+        subtitle: 'Медицинский допуск к занятиям спортом и плаванием',
+        term: 'В течение дня',
+        icon: 'waves',
+        color: 'bg-teal-50 text-teal-600'
+      },
+      {
+        id: 'cert-095',
+        title: 'Справка 095/у (учёба / работа)',
+        subtitle: 'Подтверждение временной нетрудоспособности',
+        term: '1 рабочий день',
+        icon: 'briefcase-medical',
+        color: 'bg-indigo-50 text-indigo-600'
+      },
+      {
+        id: 'cert-extract',
+        title: 'Выписка из медкарты',
+        subtitle: 'Полная сводка приёмов, диагнозов и результатов анализов',
+        term: 'Моментально онлайн',
+        icon: 'file-spreadsheet',
+        color: 'bg-emerald-50 text-emerald-600'
+      }
+    ];
+
+    const HEALTH_METRICS = {
+      bp: {
+        label: 'Давление (систол.)',
+        unit: 'мм рт. ст.',
+        norm: 'Норма: 110–129 мм рт. ст.',
+        labels: ['Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь'],
+        data: [128, 126, 124, 125, 121, 119],
+        color: '#0284c7'
+      },
+      glucose: {
+        label: 'Глюкоза',
+        unit: 'ммоль/л',
+        norm: 'Норма: 3.9–5.8 ммоль/л',
+        labels: ['Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь'],
+        data: [5.4, 5.3, 5.1, 5.2, 5.0, 4.9],
+        color: '#0d9488'
+      },
+      hemoglobin: {
+        label: 'Гемоглобин',
+        unit: 'г/л',
+        norm: 'Норма: 120–155 г/л',
+        labels: ['Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь'],
+        data: [128, 130, 132, 134, 136, 138],
+        color: '#059669'
+      },
+      cholesterol: {
+        label: 'Холестерин',
+        unit: 'ммоль/л',
+        norm: 'Норма: до 5.2 ммоль/л',
+        labels: ['Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь'],
+        data: [5.3, 5.2, 5.0, 4.9, 4.8, 4.7],
+        color: '#6366f1'
+      }
+    };
+
+    const DEMO_LABS = [
+      {
+        id: 'lab-1',
+        name: 'Общий анализ крови (ОАК)',
+        date: '2026-11-18',
+        value: 'Гемоглобин 138 г/л, Лейкоциты 6.1×10⁹/л',
+        status: 'Норма',
+        explanation: 'Показатели крови в пределах здоровой нормы. Признаков воспаления или анемии нет.'
+      },
+      {
+        id: 'lab-2',
+        name: 'Глюкоза натощак',
+        date: '2026-11-18',
+        value: '4.9 ммоль/л',
+        status: 'Норма',
+        explanation: 'Уровень сахара в крови стабильный и соответствует целевому диапазону.'
+      },
+      {
+        id: 'lab-3',
+        name: 'Витамин D (25-OH)',
+        date: '2026-11-10',
+        value: '26 нг/мл (норма от 30 нг/мл)',
+        status: 'Внимание',
+        explanation: 'Незначительный недостаток витамина D перед зимним сезоном. Рекомендуется профилактический курс по согласованию с терапевтом.'
+      }
+    ];
+
+    const DEMO_HISTORY = [
+      {
+        id: 'hist-1',
+        date: '2026-11-12',
+        doctor: 'Смирнова Елена Викторовна',
+        specialty: 'Терапевт',
+        summary: 'Профилактический чекап',
+        recommendation: 'Продолжать умеренную физическую активность, контроль витамина D и повторный осмотр через 3 месяца.'
+      },
+      {
+        id: 'hist-2',
+        date: '2026-10-04',
+        doctor: 'Каримов Тимур Рашидович',
+        specialty: 'Кардиолог',
+        summary: 'Плановая ЭКГ и оценка давления',
+        recommendation: 'Ритм синусовый, ЭКГ без отклонений. Рекомендован контроль давления 2 раза в неделю.'
+      }
+    ];
+
+    function createInitialState() {
+      return {
+        profile: {
+          name: '',
+          birthYear: '',
+          city: 'Ташкент',
+          onboarded: false
+        },
+        activeTab: 'home',
+        selectedMetric: 'bp',
+        filters: {
+          specialty: 'all',
+          format: 'all',
+          symptom: '',
+          query: '',
+          certStatus: 'all'
+        },
+        appointments: [
+          {
+            id: 'apt-101',
+            ticketNumber: 'ТЛ-4821',
+            doctorId: 'doc-1',
+            doctorName: 'Смирнова Елена Викторовна',
+            specialty: 'Терапевт',
+            date: '2026-11-25',
+            time: '11:00',
+            format: 'Очно',
+            room: 'Каб. 204',
+            comment: 'Обсуждение результатов витамина D',
+            status: 'Подтверждена'
+          },
+          {
+            id: 'apt-102',
+            ticketNumber: 'ТЛ-4835',
+            doctorId: 'doc-3',
+            doctorName: 'Волкова Мария Андреевна',
+            specialty: 'Невролог',
+            date: '2026-11-28',
+            time: '13:00',
+            format: 'Онлайн',
+            room: 'Видеокабинет №3',
+            comment: 'Консультация по режиму сна',
+            status: 'Подтверждена'
+          }
+        ],
+        certificates: [
+          {
+            id: 'req-201',
+            typeId: 'cert-pool',
+            typeTitle: 'Справка в бассейн / спортсекцию',
+            target: 'Спорткомплекс «Дельфин»',
+            format: 'Электронный документ',
+            patientName: '',
+            createdAt: '2026-11-20',
+            status: 'Готова'
+          },
+          {
+            id: 'req-202',
+            typeId: 'cert-086',
+            typeTitle: 'Форма 086/у',
+            target: 'Для трудоустройства',
+            format: 'Бумажный оригинал',
+            patientName: '',
+            createdAt: '2026-11-23',
+            status: 'В обработке'
+          }
+        ],
+        notes: [
+          {
+            id: 'note-1',
+            category: 'Измерения',
+            text: 'Давление утром 119/76, пульс 68. Самочувствие отличное.',
+            date: '2026-11-23'
+          },
+          {
+            id: 'note-2',
+            category: 'Вопрос врачу',
+            text: 'Уточнить дозировку витамина D на зимний период у терапевта.',
+            date: '2026-11-21'
+          }
+        ]
+      };
+    }
+
+    let state = loadState();
+    let healthChart = null;
+    let activeBookingContext = null; // { mode: 'create'|'reschedule', doctorId, appointmentId }
+    let activeTicketId = null;
+    let activeCertPreviewId = null;
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return createInitialState();
+        const parsed = JSON.parse(raw);
+        const base = createInitialState();
+        return {
+          ...base,
+          ...parsed,
+          profile: { ...base.profile, ...(parsed.profile || {}) },
+          filters: { ...base.filters, ...(parsed.filters || {}) }
+        };
+      } catch (e) {
+        return createInitialState();
+      }
+    }
+
+    function saveState(silent = false) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        // Ignore storage quota / sandbox restrictions gracefully
+      }
+      if (!silent) {
+        // State persisted
+      }
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = type === 'success'
+        ? 'bg-slate-900 text-white border-teal-500/40'
+        : type === 'warning'
+        ? 'bg-amber-900 text-amber-50 border-amber-400/40'
+        : 'bg-sky-900 text-white border-sky-400/40';
+      const iconName = type === 'success' ? 'check-circle-2' : type === 'warning' ? 'alert-circle' : 'info';
+
+      toast.className = `toast-enter pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium ${styles}`;
+      toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 text-teal-400 shrink-0"></i><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+      if (window.lucide) lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        toast.style.transition = 'all 0.2s ease';
+        setTimeout(() => toast.remove(), 220);
+      }, 2800);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDateRu(isoDate) {
+      if (!isoDate) return '';
+      const parts = isoDate.split('-');
+      if (parts.length !== 3) return isoDate;
+      const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+      const day = parseInt(parts[2], 10);
+      const month = months[parseInt(parts[1], 10) - 1] || parts[1];
+      return `${day} ${month} ${parts[0]}`;
+    }
+
+    function getDisplayName() {
+      return state.profile.name && state.profile.name.trim() ? state.profile.name.trim() : 'Пациент (имя не указано)';
+    }
+
+    function getInitials(name) {
+      if (!name || !name.trim()) return '?';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+
+    // Navigation
+    function navigateTo(tab) {
+      state.activeTab = tab;
+      saveState(true);
+      document.querySelectorAll('.view-panel').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById(`view-${tab}`);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isActive = btn.dataset.nav === tab;
+        if (isActive) {
+          btn.classList.add('bg-white', 'text-sky-700', 'shadow-sm');
+          btn.classList.remove('text-slate-600', 'hover:text-slate-900');
+        } else {
+          btn.classList.remove('bg-white', 'text-sky-700', 'shadow-sm');
+          btn.classList.add('text-slate-600', 'hover:text-slate-900');
+        }
+      });
+
+      if (tab === 'medcard') {
+        renderHealthChart();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Modals
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    // Profile
+    function openProfileModal() {
+      document.getElementById('profile-name-input').value = state.profile.name || '';
+      document.getElementById('profile-year-input').value = state.profile.birthYear || '';
+      document.getElementById('profile-city-input').value = state.profile.city || '';
+      document.getElementById('profile-modal-title').textContent = state.profile.name ? 'Редактировать профиль' : 'Добро пожаловать!';
+      openModal('profile-modal');
+      setTimeout(() => document.getElementById('profile-name-input').focus(), 100);
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('profile-name-input').value.trim();
+      const birthYear = document.getElementById('profile-year-input').value.trim();
+      const city = document.getElementById('profile-city-input').value.trim();
+      state.profile = {
+        name,
+        birthYear,
+        city,
+        onboarded: true
+      };
+      saveState();
+      closeModal('profile-modal');
+      renderAll();
+      showToast(`Профиль сохранён: ${name}`);
+    }
+
+    function renderProfileUI() {
+      const hasName = Boolean(state.profile.name && state.profile.name.trim());
+      const headerNameEl = document.getElementById('header-user-name');
+      const headerAvatarEl = document.getElementById('header-avatar-initials');
+      const greetingTitleEl = document.getElementById('home-greeting-title');
+      const greetingSubEl = document.getElementById('home-greeting-subtitle');
+      const nameCtaEl = document.getElementById('home-name-cta');
+
+      if (hasName) {
+        headerNameEl.textContent = state.profile.name;
+        headerAvatarEl.textContent = getInitials(state.profile.name);
+        greetingTitleEl.textContent = `Здравствуйте, ${state.profile.name}!`;
+        const metaParts = [];
+        if (state.profile.city) metaParts.push(`г. ${state.profile.city}`);
+        if (state.profile.birthYear) metaParts.push(`${state.profile.birthYear} г.р.`);
+        greetingSubEl.textContent = metaParts.length
+          ? `Ваша медкарта и расписание готовы (${metaParts.join(' • ')}).`
+          : 'Ваша электронная медкарта, записи к врачам и справки всегда под рукой.';
+        nameCtaEl.classList.add('hidden');
+      } else {
+        headerNameEl.textContent = 'Представиться';
+        headerAvatarEl.textContent = '?';
+        greetingTitleEl.textContent = 'Добро пожаловать в Умную поликлинику!';
+        greetingSubEl.textContent = 'Введите своё имя без пароля и регистрации — оно автоматически появится в талонах и справках.';
+        nameCtaEl.classList.remove('hidden');
+      }
+
+      // Sync certificate form patient name if empty or previously synced
+      const certInput = document.getElementById('cert-patient-name');
+      if (certInput && hasName) {
+        certInput.value = state.profile.name;
+      }
+    }
+
+    // Home Quick Search
+    function renderHomeSearch(rawQuery) {
+      const query = rawQuery.trim().toLowerCase();
+      const resultsEl = document.getElementById('home-search-results');
+      const clearBtn = document.getElementById('home-search-clear');
+
+      if (!query) {
+        resultsEl.classList.add('hidden');
+        clearBtn.classList.add('hidden');
+        resultsEl.innerHTML = '';
+        return;
+      }
+      clearBtn.classList.remove('hidden');
+      resultsEl.classList.remove('hidden');
+
+      const matchedDocs = DOCTORS.filter(d =>
+        d.name.toLowerCase().includes(query) ||
+        d.specialty.toLowerCase().includes(query) ||
+        d.symptoms.some(s => s.toLowerCase().includes(query))
+      );
+
+      const matchedCerts = CERTIFICATE_CATALOG.filter(c =>
+        c.title.toLowerCase().includes(query) ||
+        c.subtitle.toLowerCase().includes(query)
+      );
+
+      if (!matchedDocs.length && !matchedCerts.length) {
+        resultsEl.innerHTML = `<div class="text-sm text-slate-500 py-2">По запросу «${escapeHtml(rawQuery)}» ничего не найдено. Попробуйте: терапевт, давление, бассейн или 086/у.</div>`;
+        return;
+      }
+
+      let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+      matchedDocs.slice(0, 4).forEach(doc => {
+        html += `
+          <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">${escapeHtml(doc.name)}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(doc.specialty)} • ближайший слот ${formatDateRu(doc.nearestDate)} в ${doc.slots[0]}</div>
+            </div>
+            <button type="button" onclick="openBookingModal('${doc.id}', '${doc.slots[0]}')" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold shrink-0">Записаться</button>
+          </div>
+        `;
+      });
+      matchedCerts.slice(0, 2).forEach(cert => {
+        html += `
+          <div class="flex items-center justify-between gap-3 p-3 rounded-xl bg-teal-50/60 border border-teal-200/70">
+            <div>
+              <div class="text-sm font-semibold text-slate-900">${escapeHtml(cert.title)}</div>
+              <div class="text-xs text-slate-500">${escapeHtml(cert.subtitle)}</div>
+            </div>
+            <button type="button" onclick="selectCertFromCatalog('${cert.id}')" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shrink-0">Оформить</button>
+          </div>
+        `;
+      });
+      html += '</div>';
+      resultsEl.innerHTML = html;
+    }
+
+    function clearHomeSearch() {
+      const input = document.getElementById('home-quick-search');
+      input.value = '';
+      renderHomeSearch('');
+    }
+
+    // Home Appointments
+    function renderAppointments() {
+      const container = document.getElementById('home-appointments-list');
+      if (!state.appointments.length) {
+        container.innerHTML = `
+          <div class="text-center py-8 px-4 rounded-xl bg-slate-50 border border-dashed border-slate-200">
+            <p class="text-sm text-slate-600 mb-3">У вас пока нет активных записей к врачам.</p>
+            <button type="button" onclick="navigateTo('booking')" class="px-4 py-2 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700">Подобрать врача</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = state.appointments.map(apt => {
+        const isCancelled = apt.status === 'Отменена';
+        const badgeClass = isCancelled
+          ? 'bg-rose-50 text-rose-700 border-rose-200'
+          : apt.status === 'Перенесена'
+          ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        const formatBadge = apt.format === 'Онлайн'
+          ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-xs font-medium"><i data-lucide="video" class="w-3 h-3"></i>Онлайн</span>'
+          : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-50 text-sky-700 text-xs font-medium"><i data-lucide="building-2" class="w-3 h-3"></i>Очно</span>';
+
+        return `
+          <div class="p-4 rounded-xl border ${isCancelled ? 'border-slate-200 bg-slate-50/70 opacity-75' : 'border-slate-200 bg-white hover:border-sky-300'} transition-all">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full border ${badgeClass}">${escapeHtml(apt.status)}</span>
+                  ${formatBadge}
+                  <span class="text-xs text-slate-400 font-mono">${escapeHtml(apt.ticketNumber)}</span>
+                </div>
+                <div class="font-bold text-slate-900">${escapeHtml(apt.doctorName)}</div>
+                <div class="text-xs sm:text-sm text-slate-600">
+                  <span class="font-medium text-sky-700">${escapeHtml(apt.specialty)}</span> • ${formatDateRu(apt.date)}, <strong>${escapeHtml(apt.time)}</strong> • ${escapeHtml(apt.room)}
+                </div>
+                ${apt.comment ? `<div class="text-xs text-slate-500">Заметка: ${escapeHtml(apt.comment)}</div>` : ''}
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2 shrink-0">
+                <button type="button" onclick="openTicketModal('${apt.id}')" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="ticket" class="w-3.5 h-3.5"></i>
+                  <span>Талон</span>
+                </button>
+                ${!isCancelled ? `
+                  <button type="button" onclick="openRescheduleModal('${apt.id}')" class="px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold transition-colors">Перенести</button>
+                  <button type="button" onclick="cancelAppointment('${apt.id}')" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition-colors">Отменить</button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function cancelAppointment(id) {
+      const apt = state.appointments.find(a => a.id === id);
+      if (!apt) return;
+      apt.status = 'Отменена';
+      saveState();
+      renderAppointments();
+      showToast(`Запись ${apt.ticketNumber} отменена`, 'warning');
+    }
+
+    // Home Summaries
+    function renderHomeSummaries() {
+      const certContainer = document.getElementById('home-certificates-summary');
+      certContainer.innerHTML = state.certificates.slice(0, 3).map(cert => {
+        const badge = cert.status === 'Готова'
+          ? 'bg-emerald-50 text-emerald-700'
+          : cert.status === 'В обработке'
+          ? 'bg-amber-50 text-amber-700'
+          : 'bg-sky-50 text-sky-700';
+        return `
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-slate-900 truncate">${escapeHtml(cert.typeTitle)}</div>
+              <div class="text-[11px] text-slate-500 truncate">${escapeHtml(cert.target || cert.format)}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${badge}">${escapeHtml(cert.status)}</span>
+          </div>
+        `;
+      }).join('');
+
+      const labsContainer = document.getElementById('home-labs-summary');
+      labsContainer.innerHTML = DEMO_LABS.slice(0, 3).map(lab => {
+        const badge = lab.status === 'Норма' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
+        return `
+          <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+            <div class="min-w-0">
+              <div class="text-xs font-semibold text-slate-900 truncate">${escapeHtml(lab.name)}</div>
+              <div class="text-[11px] text-slate-500 truncate">${formatDateRu(lab.date)}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold shrink-0 ${badge}">${escapeHtml(lab.status)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Booking Section
+    function renderSymptoms() {
+      const container = document.getElementById('symptom-chips');
+      container.innerHTML = SYMPTOMS.map(sym => {
+        const active = state.filters.symptom === sym;
+        return `
+          <button type="button" onclick="toggleSymptomFilter('${sym}')" class="px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${active ? 'bg-teal-600 text-white border-teal-600 shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-teal-400 hover:bg-teal-50/50'}">
+            ${escapeHtml(sym)}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function toggleSymptomFilter(sym) {
+      state.filters.symptom = state.filters.symptom === sym ? '' : sym;
+      saveState(true);
+      renderSymptoms();
+      renderDoctors();
+    }
+
+    function updateBookingFilter(key, value) {
+      state.filters[key] = value;
+      saveState(true);
+      renderDoctors();
+    }
+
+    function resetBookingFilters() {
+      state.filters.specialty = 'all';
+      state.filters.format = 'all';
+      state.filters.symptom = '';
+      state.filters.query = '';
+      saveState(true);
+      syncFilterInputs();
+      renderSymptoms();
+      renderDoctors();
+      showToast('Фильтры подбора сброшены', 'info');
+    }
+
+    function syncFilterInputs() {
+      document.getElementById('filter-specialty').value = state.filters.specialty || 'all';
+      document.getElementById('filter-format').value = state.filters.format || 'all';
+      document.getElementById('filter-doctor-query').value = state.filters.query || '';
+      document.getElementById('cert-status-filter').value = state.filters.certStatus || 'all';
+    }
+
+    function renderDoctors() {
+      const container = document.getElementById('doctors-grid');
+      const { specialty, format, symptom, query } = state.filters;
+      const q = (query || '').trim().toLowerCase();
+
+      const filtered = DOCTORS.filter(doc => {
+        if (specialty !== 'all' && doc.specialty !== specialty) return false;
+        if (format !== 'all' && !doc.formats.includes(format)) return false;
+        if (symptom && !doc.symptoms.includes(symptom)) return false;
+        if (q && !doc.name.toLowerCase().includes(q) && !doc.specialty.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div class="col-span-full bg-white rounded-2xl p-8 text-center border border-slate-200">
+            <p class="text-slate-600 text-sm mb-3">По выбранным фильтрам врачи не найдены.</p>
+            <button type="button" onclick="resetBookingFilters()" class="px-4 py-2 rounded-xl bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700">Показать всех врачей</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(doc => `
+        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md hover:border-sky-300 transition-all flex flex-col justify-between gap-4">
+          <div class="space-y-3">
+            <div class="flex items-start gap-3.5">
+              <div class="w-12 h-12 rounded-2xl ${doc.color} flex items-center justify-center font-bold text-base shrink-0">
+                ${getInitials(doc.name)}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 text-xs font-semibold text-amber-600 mb-0.5">
+                  <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                  <span>${doc.rating.toFixed(1)}</span>
+                  <span class="text-slate-400 font-normal">(${doc.reviews} отзывов)</span>
+                </div>
+                <h3 class="font-bold text-slate-900 leading-snug">${escapeHtml(doc.name)}</h3>
+                <div class="text-xs text-sky-700 font-semibold">${escapeHtml(doc.specialty)} • стаж ${doc.experience} лет</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1.5">
+              ${doc.formats.map(f => `
+                <span class="px-2.5 py-0.5 rounded-md text-xs font-medium ${f === 'Онлайн' ? 'bg-indigo-50 text-indigo-700' : 'bg-sky-50 text-sky-700'}">
+                  ${f === 'Онлайн' ? 'Онлайн-консультация' : 'Очно (' + escapeHtml(doc.room) + ')'}
+                </span>
+              `).join('')}
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <div class="text-xs text-slate-500 mb-2">Ближайшие слоты (${formatDateRu(doc.nearestDate)}):</div>
+              <div class="flex flex-wrap gap-1.5">
+                ${doc.slots.map(slot => `
+                  <button type="button" onclick="openBookingModal('${doc.id}', '${slot}')" class="px-2.5 py-1.5 rounded-lg bg-slate-50 hover:bg-sky-600 hover:text-white border border-slate-200 hover:border-sky-600 text-xs font-semibold text-slate-700 transition-colors">
+                    ${slot}
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <button type="button" onclick="openBookingModal('${doc.id}', '${doc.slots[0]}')" class="w-full py-2.5 rounded-xl bg-sky-50 hover:bg-sky-600 text-sky-700 hover:text-white font-semibold text-sm transition-colors">
+            Записаться на приём
+          </button>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openBookingModal(doctorId, preselectedTime) {
+      const doc = DOCTORS.find(d => d.id === doctorId);
+      if (!doc) return;
+      activeBookingContext = { mode: 'create', doctorId };
+
+      document.getElementById('booking-modal-badge').textContent = 'Новая запись';
+      document.getElementById('booking-submit-label').textContent = 'Подтвердить запись';
+      document.getElementById('booking-modal-doctor-name').textContent = doc.name;
+      document.getElementById('booking-modal-doctor-spec').textContent = `${doc.specialty} • ${doc.room}`;
+      document.getElementById('booking-patient-name').value = state.profile.name || '';
+      document.getElementById('booking-date').value = doc.nearestDate;
+      document.getElementById('booking-comment').value = state.filters.symptom ? `Жалоба: ${state.filters.symptom}` : '';
+
+      renderBookingFormatOptions(doc.formats, doc.formats[0]);
+      renderBookingTimeOptions(doc.slots, preselectedTime || doc.slots[0]);
+      openModal('booking-modal');
+    }
+
+    function openRescheduleModal(appointmentId) {
+      const apt = state.appointments.find(a => a.id === appointmentId);
+      if (!apt) return;
+      const doc = DOCTORS.find(d => d.id === apt.doctorId) || DOCTORS[0];
+      activeBookingContext = { mode: 'reschedule', doctorId: doc.id, appointmentId };
+
+      document.getElementById('booking-modal-badge').textContent = `Перенос записи ${apt.ticketNumber}`;
+      document.getElementById('booking-submit-label').textContent = 'Сохранить новое время';
+      document.getElementById('booking-modal-doctor-name').textContent = apt.doctorName;
+      document.getElementById('booking-modal-doctor-spec').textContent = apt.specialty;
+      document.getElementById('booking-patient-name').value = state.profile.name || '';
+      document.getElementById('booking-date').value = apt.date;
+      document.getElementById('booking-comment').value = apt.comment || '';
+
+      renderBookingFormatOptions(doc.formats, apt.format);
+      renderBookingTimeOptions(doc.slots, apt.time);
+      openModal('booking-modal');
+    }
+
+    function renderBookingFormatOptions(formats, selected) {
+      const el = document.getElementById('booking-format-options');
+      el.innerHTML = formats.map(f => `
+        <label class="flex items-center gap-2 p-3 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer hover:border-sky-400 text-xs sm:text-sm font-medium">
+          <input type="radio" name="bookingFormat" value="${f}" ${f === selected ? 'checked' : ''} class="text-sky-600" />
+          <span>${f === 'Онлайн' ? 'Онлайн-консультация' : 'Очно в клинике'}</span>
+        </label>
+      `).join('');
+    }
+
+    function renderBookingTimeOptions(slots, selected) {
+      const allSlots = Array.from(new Set([...slots, '09:00', '10:30', '12:00', '14:30', '16:00', '17:30'])).sort();
+      const sel = document.getElementById('booking-time');
+      sel.innerHTML = allSlots.map(t => `<option value="${t}" ${t === selected ? 'selected' : ''}>${t}</option>`).join('');
+    }
+
+    function confirmBooking(e) {
+      e.preventDefault();
+      if (!activeBookingContext) return;
+      const doc = DOCTORS.find(d => d.id === activeBookingContext.doctorId);
+      const patientName = document.getElementById('booking-patient-name').value.trim();
+      const format = document.querySelector('input[name="bookingFormat"]:checked')?.value || 'Очно';
+      const date = document.getElementById('booking-date').value;
+      const time = document.getElementById('booking-time').value;
+      const comment = document.getElementById('booking-comment').value.trim();
+
+      if (patientName && patientName !== state.profile.name) {
+        state.profile.name = patientName;
+        state.profile.onboarded = true;
+      }
+
+      if (activeBookingContext.mode === 'reschedule') {
+        const apt = state.appointments.find(a => a.id === activeBookingContext.appointmentId);
+        if (apt) {
+          apt.date = date;
+          apt.time = time;
+          apt.format = format;
+          apt.room = format === 'Онлайн' ? 'Видеокабинет №1' : doc.room;
+          apt.comment = comment;
+          apt.status = 'Перенесена';
+          saveState();
+          closeModal('booking-modal');
+          renderAll();
+          showToast(`Запись ${apt.ticketNumber} перенесена на ${formatDateRu(date)} в ${time}`);
+          openTicketModal(apt.id);
+        }
+      } else {
+        const ticketNumber = 'ТЛ-' + Math.floor(1000 + Math.random() * 9000);
+        const newApt = {
+          id: 'apt-' + Date.now(),
+          ticketNumber,
+          doctorId: doc.id,
+          doctorName: doc.name,
+          specialty: doc.specialty,
+          date,
+          time,
+          format,
+          room: format === 'Онлайн' ? 'Видеокабинет №2' : doc.room,
+          comment,
+          status: 'Подтверждена'
+        };
+        state.appointments.unshift(newApt);
+        saveState();
+        closeModal('booking-modal');
+        renderAll();
+        showToast(`Вы записаны! Талон ${ticketNumber} сохранён`);
+        openTicketModal(newApt.id);
+      }
+    }
+
+    function openTicketModal(appointmentId) {
+      const apt = state.appointments.find(a => a.id === appointmentId);
+      if (!apt) return;
+      activeTicketId = appointmentId;
+      document.getElementById('ticket-number').textContent = `№ ${apt.ticketNumber}`;
+      const patientName = getDisplayName();
+      document.getElementById('ticket-body').innerHTML = `
+        <div class="space-y-3 text-sm">
+          <div class="p-3 rounded-xl bg-sky-50 border border-sky-100">
+            <div class="text-xs text-sky-700 font-semibold">Пациент</div>
+            <div class="font-bold text-slate-900 text-base">${escapeHtml(patientName)}</div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <div class="text-xs text-slate-400">Дата</div>
+              <div class="font-semibold text-slate-900">${formatDateRu(apt.date)}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-400">Время</div>
+              <div class="font-semibold text-slate-900">${escapeHtml(apt.time)}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-400">Формат</div>
+              <div class="font-semibold text-slate-900">${escapeHtml(apt.format)}</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-400">Место / Кабинет</div>
+              <div class="font-semibold text-slate-900">${escapeHtml(apt.room)}</div>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-100">
+            <div class="text-xs text-slate-400">Врач и специализация</div>
+            <div class="font-bold text-slate-900">${escapeHtml(apt.doctorName)}</div>
+            <div class="text-xs text-sky-700 font-medium">${escapeHtml(apt.specialty)}</div>
+          </div>
+          ${apt.comment ? `<div class="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg">Комментарий: ${escapeHtml(apt.comment)}</div>` : ''}
+        </div>
+      `;
+      openModal('ticket-modal');
+    }
+
+    function downloadTicketCard() {
+      const apt = state.appointments.find(a => a.id === activeTicketId);
+      if (!apt) return;
+      const content = [
+        'ЭЛЕКТРОННЫЙ ТАЛОН НА ПРИЁМ — УМНАЯ ПОЛИКЛИНИКА',
+        '================================================',
+        `Номер талона: ${apt.ticketNumber}`,
+        `Статус: ${apt.status}`,
+        `Пациент: ${getDisplayName()}`,
+        `Врач: ${apt.doctorName} (${apt.specialty})`,
+        `Дата и время: ${formatDateRu(apt.date)} в ${apt.time}`,
+        `Формат: ${apt.format} (${apt.room})`,
+        apt.comment ? `Комментарий: ${apt.comment}` : ''
+      ].filter(Boolean).join('\n');
+      triggerDownload(`talon_${apt.ticketNumber}.txt`, content, 'text/plain;charset=utf-8');
+      showToast(`Талон ${apt.ticketNumber} скачан`);
+    }
+
+    // Certificates Section
+    function renderCertificatesCatalog() {
+      const container = document.getElementById('certificates-catalog');
+      container.innerHTML = CERTIFICATE_CATALOG.map(c => `
+        <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:border-teal-300 transition-all flex flex-col justify-between gap-3">
+          <div class="space-y-2">
+            <div class="w-10 h-10 rounded-xl ${c.color} flex items-center justify-center">
+              <i data-lucide="${c.icon}" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-bold text-slate-900 text-sm">${escapeHtml(c.title)}</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">${escapeHtml(c.subtitle)}</p>
+          </div>
+          <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
+            <span class="text-[11px] font-medium text-teal-700">${escapeHtml(c.term)}</span>
+            <button type="button" onclick="selectCertFromCatalog('${c.id}')" class="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-600 text-teal-700 hover:text-white text-xs font-semibold transition-colors">Выбрать</button>
+          </div>
+        </div>
+      `).join('');
+
+      const selectEl = document.getElementById('cert-type');
+      selectEl.innerHTML = CERTIFICATE_CATALOG.map(c => `<option value="${c.id}">${escapeHtml(c.title)}</option>`).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function selectCertFromCatalog(certId) {
+      navigateTo('certificates');
+      document.getElementById('cert-type').value = certId;
+      document.getElementById('cert-target').focus();
+      showToast('Выбран тип справки — заполните цель и отправьте заявку', 'info');
+    }
+
+    function submitCertificateRequest(e) {
+      e.preventDefault();
+      const patientName = document.getElementById('cert-patient-name').value.trim();
+      const typeId = document.getElementById('cert-type').value;
+      const target = document.getElementById('cert-target').value.trim();
+      const format = document.querySelector('input[name="certFormat"]:checked')?.value || 'Электронный документ';
+      const catalogItem = CERTIFICATE_CATALOG.find(c => c.id === typeId) || CERTIFICATE_CATALOG[0];
+
+      if (patientName && patientName !== state.profile.name) {
+        state.profile.name = patientName;
+        state.profile.onboarded = true;
+      }
+
+      const newReq = {
+        id: 'req-' + Date.now(),
+        typeId,
+        typeTitle: catalogItem.title,
+        target: target || 'По месту требования',
+        format,
+        patientName,
+        createdAt: '2026-11-24',
+        status: 'Заявка принята'
+      };
+      state.certificates.unshift(newReq);
+      document.getElementById('cert-target').value = '';
+      saveState();
+      renderAll();
+      showToast(`Заявка на «${catalogItem.title}» создана`);
+    }
+
+    function updateCertFilter(val) {
+      state.filters.certStatus = val;
+      saveState(true);
+      renderCertificatesList();
+    }
+
+    function cycleCertificateStatus(id) {
+      const req = state.certificates.find(c => c.id === id);
+      if (!req) return;
+      const order = ['Заявка принята', 'В обработке', 'Готова'];
+      const nextIdx = (order.indexOf(req.status) + 1) % order.length;
+      req.status = order[nextIdx];
+      saveState();
+      renderAll();
+      showToast(`Статус обновлён: ${req.status}`);
+    }
+
+    function renderCertificatesList() {
+      const container = document.getElementById('certificates-list');
+      const filter = state.filters.certStatus || 'all';
+      const items = state.certificates.filter(c => filter === 'all' || c.status === filter);
+
+      if (!items.length) {
+        container.innerHTML = `<div class="text-sm text-slate-500 py-6 text-center bg-slate-50 rounded-xl">Заявок с таким статусом пока нет.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(cert => {
+        const badge = cert.status === 'Готова'
+          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+          : cert.status === 'В обработке'
+          ? 'bg-amber-50 text-amber-700 border-amber-200'
+          : 'bg-sky-50 text-sky-700 border-sky-200';
+        const owner = cert.patientName || getDisplayName();
+        return `
+          <div class="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
+            <div class="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge}">${escapeHtml(cert.status)}</span>
+                  <span class="text-xs text-slate-400">от ${formatDateRu(cert.createdAt)}</span>
+                </div>
+                <div class="font-bold text-slate-900">${escapeHtml(cert.typeTitle)}</div>
+                <div class="text-xs text-slate-600 mt-0.5">Пациент: <strong>${escapeHtml(owner)}</strong> • ${escapeHtml(cert.target)} (${escapeHtml(cert.format)})</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+              <button type="button" onclick="cycleCertificateStatus('${cert.id}')" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Переключить статус</span>
+              </button>
+              <button type="button" onclick="openCertPreview('${cert.id}')" class="px-3 py-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                <span>Просмотреть</span>
+              </button>
+              ${cert.status === 'Готова' ? `
+                <button type="button" onclick="downloadCertificateById('${cert.id}')" class="px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                  <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                  <span>Скачать</span>
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function openCertPreview(id) {
+      const cert = state.certificates.find(c => c.id === id);
+      if (!cert) return;
+      activeCertPreviewId = id;
+      const patient = cert.patientName || getDisplayName();
+      const yearStr = state.profile.birthYear ? `${state.profile.birthYear} г.р.` : 'год рождения не указан';
+      const cityStr = state.profile.city ? `г. ${state.profile.city}` : '';
+
+      document.getElementById('cert-preview-body').innerHTML = `
+        <div class="border-2 border-teal-600/30 rounded-xl p-5 bg-gradient-to-br from-white to-teal-50/30 space-y-4">
+          <div class="flex items-start justify-between border-b border-slate-200 pb-3">
+            <div>
+              <div class="text-xs font-bold uppercase tracking-wider text-teal-700">Умная поликлиника</div>
+              <div class="text-lg font-bold text-slate-900 mt-0.5">${escapeHtml(cert.typeTitle)}</div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg text-xs font-semibold ${cert.status === 'Готова' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${escapeHtml(cert.status)}
+            </span>
+          </div>
+          <div class="space-y-2 text-sm text-slate-700">
+            <p>Выдана пациенту: <strong class="text-slate-900">${escapeHtml(patient)}</strong> (${escapeHtml(yearStr)}${cityStr ? ', ' + escapeHtml(cityStr) : ''})</p>
+            <p>Назначение: <strong>${escapeHtml(cert.target)}</strong></p>
+            <p>Заключение: Противопоказаний не выявлено. По результатам осмотра и актуальных анализов состояние удовлетворительное.</p>
+          </div>
+          <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <span>Дата оформления: ${formatDateRu(cert.createdAt)}</span>
+            <span class="font-semibold text-teal-700 flex items-center gap-1">
+              <i data-lucide="badge-check" class="w-4 h-4"></i>
+              Электронная подпись врача
+            </span>
+          </div>
+        </div>
+      `;
+      openModal('cert-preview-modal');
+    }
+
+    function downloadCurrentCertificate() {
+      if (activeCertPreviewId) downloadCertificateById(activeCertPreviewId);
+    }
+
+    function downloadCertificateById(id) {
+      const cert = state.certificates.find(c => c.id === id);
+      if (!cert) return;
+      const patient = cert.patientName || getDisplayName();
+      const content = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${escapeHtml(cert.typeTitle)}</title></head><body style="font-family:sans-serif;max-width:680px;margin:40px auto;padding:32px;border:2px solid #0d9488;border-radius:12px;">
+        <h2 style="color:#0f766e;margin-top:0;">Умная поликлиника — Медицинский документ</h2>
+        <h3>${escapeHtml(cert.typeTitle)}</h3>
+        <p><strong>Пациент:</strong> ${escapeHtml(patient)} ${state.profile.birthYear ? `(${escapeHtml(state.profile.birthYear)} г.р.)` : ''}</p>
+        <p><strong>Куда представляется:</strong> ${escapeHtml(cert.target)}</p>
+        <p><strong>Статус:</strong> ${escapeHtml(cert.status)}</p>
+        <p><strong>Дата оформления:</strong> ${formatDateRu(cert.createdAt)}</p>
+        <hr style="border:none;border-top:1px solid #cbd5e1;margin:20px 0;">
+        <p>По результатам медицинского осмотра противопоказаний не выявлено. Документ сформирован в личном кабинете пациента.</p>
+      </body></html>`;
+      triggerDownload(`spravka_${cert.typeId}.html`, content, 'text/html;charset=utf-8');
+      showToast(`Документ «${cert.typeTitle}» скачан`);
+    }
+
+    function triggerDownload(filename, content, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // Medcard Section
+    function renderMedcard() {
+      // Metric buttons
+      const btnContainer = document.getElementById('chart-metric-buttons');
+      btnContainer.innerHTML = Object.entries(HEALTH_METRICS).map(([key, m]) => {
+        const active = state.selectedMetric === key;
+        return `
+          <button type="button" onclick="selectHealthMetric('${key}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${active ? 'bg-sky-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+            ${escapeHtml(m.label)}
+          </button>
+        `;
+      }).join('');
+
+      // Labs
+      document.getElementById('medcard-labs-list').innerHTML = DEMO_LABS.map(lab => {
+        const badge = lab.status === 'Норма' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+        return `
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="font-bold text-slate-900 text-sm">${escapeHtml(lab.name)}</div>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${badge}">${escapeHtml(lab.status)}</span>
+            </div>
+            <div class="text-xs font-semibold text-sky-700">${escapeHtml(lab.value)} • ${formatDateRu(lab.date)}</div>
+            <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(lab.explanation)}</p>
+          </div>
+        `;
+      }).join('');
+
+      // History
+      document.getElementById('medcard-history-list').innerHTML = DEMO_HISTORY.map(h => `
+        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span class="font-semibold text-sky-700">${escapeHtml(h.specialty)}</span>
+            <span>${formatDateRu(h.date)}</span>
+          </div>
+          <div class="font-bold text-slate-900 text-sm">${escapeHtml(h.doctor)}</div>
+          <div class="text-xs font-medium text-slate-800">${escapeHtml(h.summary)}</div>
+          <p class="text-xs text-slate-600 leading-relaxed">${escapeHtml(h.recommendation)}</p>
+        </div>
+      `).join('');
+
+      // Personal Notes
+      renderPatientNotes();
+      if (state.activeTab === 'medcard') {
+        renderHealthChart();
+      }
+    }
+
+    function selectHealthMetric(key) {
+      state.selectedMetric = key;
+      saveState(true);
+      renderMedcard();
+    }
+
+    function renderHealthChart() {
+      const canvas = document.getElementById('health-dynamics-chart');
+      if (!canvas || typeof Chart === 'undefined') return;
+      const metric = HEALTH_METRICS[state.selectedMetric] || HEALTH_METRICS.bp;
+      document.getElementById('chart-reference-note').textContent = metric.norm;
+
+      if (healthChart) {
+        healthChart.destroy();
+      }
+
+      healthChart = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: metric.labels,
+          datasets: [{
+            label: `${metric.label} (${metric.unit})`,
+            data: metric.data,
+            borderColor: metric.color,
+            backgroundColor: metric.color + '20',
+            borderWidth: 3,
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: metric.color,
+            pointBorderWidth: 2.5,
+            pointRadius: 5,
+            fill: true,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: {
+              grid: { color: '#e2e8f0' },
+              ticks: { color: '#64748b', font: { size: 12 } }
+            },
+            x: {
+              grid: { display: false },
+              ticks: { color: '#64748b', font: { size: 12 } }
+            }
+          }
+        }
+      });
+    }
+
+    function renderPatientNotes() {
+      const container = document.getElementById('medcard-notes-list');
+      if (!state.notes.length) {
+        container.innerHTML = `<div class="col-span-full text-sm text-slate-500 py-4 text-center bg-slate-50 rounded-xl">Личных заметок пока нет.</div>`;
+        return;
+      }
+      container.innerHTML = state.notes.map(note => `
+        <div class="p-3.5 rounded-xl bg-amber-50/50 border border-amber-200/70 flex items-start justify-between gap-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 text-[11px] font-semibold">${escapeHtml(note.category)}</span>
+              <span class="text-[11px] text-slate-400">${formatDateRu(note.date)}</span>
+            </div>
+            <p class="text-sm text-slate-800">${escapeHtml(note.text)}</p>
+          </div>
+          <button type="button" onclick="deletePatientNote('${note.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors shrink-0" title="Удалить заметку">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      `).join('');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function addPatientNote(e) {
+      e.preventDefault();
+      const category = document.getElementById('note-category').value;
+      const textInput = document.getElementById('note-text');
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      state.notes.unshift({
+        id: 'note-' + Date.now(),
+        category,
+        text,
+        date: '2026-11-24'
+      });
+      textInput.value = '';
+      saveState();
+      renderPatientNotes();
+      showToast('Заметка добавлена в медкарту');
+    }
+
+    function deletePatientNote(id) {
+      state.notes = state.notes.filter(n => n.id !== id);
+      saveState();
+      renderPatientNotes();
+      showToast('Заметка удалена', 'info');
+    }
+
+    // Reset Demo Data
+    function openResetModal() {
+      openModal('reset-modal');
+    }
+
+    function confirmResetDemoData() {
+      state = createInitialState();
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {}
+      saveState(true);
+      closeModal('reset-modal');
+      syncFilterInputs();
+      renderAll();
+      navigateTo('home');
+      showToast('Демо-данные сброшены к исходному состоянию', 'info');
+    }
+
+    function renderAll() {
+      renderProfileUI();
+      renderAppointments();
+      renderHomeSummaries();
+      renderSymptoms();
+      renderDoctors();
+      renderCertificatesCatalog();
+      renderCertificatesList();
+      renderMedcard();
+      if (window.lucide) lucide.createIcons();
+    }
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      syncFilterInputs();
+      renderAll();
+      navigateTo(state.activeTab || 'home');
+      if (!state.profile.onboarded && !state.profile.name) {
+        setTimeout(() => openProfileModal(), 350);
+      }
+    });
+  </script>
+</body>
+</html>
